@@ -16,6 +16,8 @@ struct Record
     let des:String!
     let profilePicName:String!
     let feedPic:String!
+    let likes:String!
+    let comments:String!
 }
 
 class FacebookFeedVC:UICollectionViewController, UICollectionViewDelegateFlowLayout
@@ -44,11 +46,11 @@ class FacebookFeedVC:UICollectionViewController, UICollectionViewDelegateFlowLay
     
     fileprivate func setDummyData()
     {
-        dataSource.append(Record(title: "Cool Deer", date: "22June 2018", place: "Varanasi", des: "Cool Deer is waiting for you", profilePicName: "deerSmile", feedPic: "recipe1"))
-        dataSource.append(Record(title: "Ice Cream", date: "28June 2018", place: "Kanpur", des: "Do you need it?", profilePicName: "iceCream", feedPic: "recipe2"))
-        dataSource.append(Record(title: "Pretty Joker", date: "22July 2018", place: "New Delhi", des: "Fun is here", profilePicName: "joker", feedPic: "recipe3"))
-        dataSource.append(Record(title: "Woops!!", date: "28July 2018", place: "Goa", des: "Feeling bad!!", profilePicName: "iceCreamAngry", feedPic: "recipe4"))
-        dataSource.append(Record(title: "Santa", date: "3Aug 2018", place: "Agra", des: "Waiting for 25Dec", profilePicName: "santa", feedPic: "recipe5"))
+        dataSource.append(Record(title: "Cool Deer", date: "22June 2018", place: "Varanasi", des: "Cool Deer is waiting for you", profilePicName: "deerSmile", feedPic: "recipe1", likes: "450Likes", comments: "3.2k Comments"))
+        dataSource.append(Record(title: "Ice Cream", date: "28June 2018", place: "Kanpur", des: "Do you need it?", profilePicName: "iceCream", feedPic: "recipe2", likes: "40Likes", comments: "4Comments"))
+        dataSource.append(Record(title: "Pretty Joker", date: "22July 2018", place: "New Delhi", des: "Fun is here", profilePicName: "joker", feedPic: "recipe3", likes: "44Likes", comments: "100Comments"))
+        dataSource.append(Record(title: "Woops!!", date: "28July 2018", place: "Goa", des: "Feeling bad!!", profilePicName: "iceCreamAngry", feedPic: "recipe4", likes: "5Likes", comments: "9Comments"))
+        dataSource.append(Record(title: "Santa", date: "3Aug 2018", place: "Agra", des: "Waiting for 25Dec", profilePicName: "santa", feedPic: "recipe5", likes: "12Like", comments: "12Comments"))
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -62,7 +64,7 @@ class FacebookFeedVC:UICollectionViewController, UICollectionViewDelegateFlowLay
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 300)
+        return CGSize(width: collectionView.frame.width, height: 344)
     }
 }
 
@@ -93,6 +95,7 @@ class FacebookFeedCell:UICollectionViewCell
             
             titleLabel.attributedText = attributedString
             desText.text = record.des!
+            likeCommentLabel.text = "\(record.likes!)  \(record.comments!)"
             
             //Image
             profilePic.image = UIImage(named:record.profilePicName!)
@@ -128,6 +131,24 @@ class FacebookFeedCell:UICollectionViewCell
         return iv
     }()
     
+    fileprivate let likeCommentLabel:UILabel = {
+        let label = UILabel()
+        label.textColor = .lightGray
+        return label
+    }()
+    
+    fileprivate let dividerView:UIView = {
+       let view = UIView()
+        view.backgroundColor = UIColor(white: 0.96, alpha: 1)
+        return view
+    }()
+    
+    fileprivate var stackView:UIStackView!
+    
+    fileprivate let likeButton = FacebookFeedCell.getButtonWithTitle(title: "Like", image: #imageLiteral(resourceName: "like"))
+    fileprivate let commentButton = FacebookFeedCell.getButtonWithTitle(title: "Comment", image: #imageLiteral(resourceName: "comment"))
+    fileprivate let shareButton = FacebookFeedCell.getButtonWithTitle(title: "Share", image: #imageLiteral(resourceName: "share"))
+
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -146,6 +167,13 @@ class FacebookFeedCell:UICollectionViewCell
         addSubview(titleLabel)
         addSubview(desText)
         addSubview(imgFeed)
+        addSubview(likeCommentLabel)
+        addSubview(dividerView)
+        
+        stackView = UIStackView(arrangedSubviews: [likeButton, commentButton, shareButton])
+        stackView.spacing = 0
+        stackView.distribution = .fillEqually
+        addSubview(stackView)
     }
     
     fileprivate func setLayout()
@@ -153,9 +181,22 @@ class FacebookFeedCell:UICollectionViewCell
         addConstraint(visualFormat: "H:|-8-[v0(44)]-8-[v1]|", forViews: profilePic, titleLabel)
         addConstraint(visualFormat: "H:|-4-[v0]-8-|", forViews: desText)
         addConstraint(visualFormat: "H:|[v0]|", forViews: imgFeed)
+        addConstraint(visualFormat: "H:|-8-[v0]-8-|", forViews: likeCommentLabel)
+        addConstraint(visualFormat: "H:|-8-[v0]-8-|", forViews: dividerView)
+        addConstraint(visualFormat: "H:|-8-[v0]-8-|", forViews: stackView)
         
         addConstraint(visualFormat: "V:|-8-[v0(44)]", forViews: profilePic)
-        addConstraint(visualFormat: "V:|-8-[v0(44)]-4-[v1(27)]-12-[v2]|", forViews: titleLabel, desText, imgFeed)
+        addConstraint(visualFormat: "V:|-8-[v0(44)]-4-[v1(27)]-12-[v2]-0-[v3(44)]-0-[v4(1)]-0-[v5(44)]-0-|", forViews: titleLabel, desText, imgFeed,likeCommentLabel,dividerView, stackView)
+    }
+    
+    fileprivate static func getButtonWithTitle(title:String, image:UIImage) -> UIButton
+    {
+        let button = UIButton(type: .system)
+        button.tintColor = .lightGray
+        button.setTitle(title, for: .normal)
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
+        button.setImage(image, for: .normal)
+        return button
     }
 }
 
