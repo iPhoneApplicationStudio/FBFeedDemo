@@ -25,6 +25,32 @@ class FacebookFeedVC:UICollectionViewController, UICollectionViewDelegateFlowLay
     fileprivate let cellId = "cellId"
     fileprivate var dataSource = [Record]()
     
+    
+    fileprivate var imageFeedOnClick:UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.isUserInteractionEnabled = true
+        iv.layer.masksToBounds = true
+        
+        //Add tap gesture on the imageView
+        return iv
+    }()
+    
+    fileprivate var blackView:UIView = {
+        let view = UIView()
+        view.frame = UIScreen.main.bounds
+        view.backgroundColor = .black
+        view.alpha = 0
+        return view
+    }()
+    
+    fileprivate var topNavBarHideView:UIView = {
+        let view = UIView(frame: CGRect(x: 0, y: 0, width: 1000, height: 64))
+        view.backgroundColor = .black
+        view.alpha = 0
+        return view
+    }()
+    
     override func viewDidLoad()
     {
         super.viewDidLoad()
@@ -60,17 +86,64 @@ class FacebookFeedVC:UICollectionViewController, UICollectionViewDelegateFlowLay
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellId, for: indexPath) as! FacebookFeedCell
         cell.record = dataSource[indexPath.item]
+        cell.fbFeedVC = self
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 344)
+        return CGSize(width: collectionView.frame.width, height: 388)
+    }
+    
+    fileprivate var imageFeedOnClickOrigin:CGPoint?
+    
+    func presentImageWithAnimation(origin:CGPoint,size:CGSize,image:UIImage?)
+    {
+        //Add a black view
+        self.view.addSubview(blackView)
+        if let window = UIApplication.shared.keyWindow{
+            window.addSubview(topNavBarHideView)
+        }
+        
+        
+        imageFeedOnClickOrigin = origin
+        imageFeedOnClick.image = image
+        imageFeedOnClick.frame = CGRect(origin: origin, size: size)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideImageWithAnimation))
+        imageFeedOnClick.addGestureRecognizer(tapGesture)
+        
+        self.view.addSubview(imageFeedOnClick)
+        
+        UIView.animate(withDuration: 0.75, delay: 0, options: .curveEaseInOut, animations: {[weak self] in
+            self?.topNavBarHideView.alpha = 1
+            self?.blackView.alpha = 1
+            self?.imageFeedOnClick.center = (self?.collectionView?.center)!
+        }) { (status) in
+            //
+        }
+    }
+    
+    @objc fileprivate func hideImageWithAnimation()
+    {
+        UIView.animate(withDuration: 0.75, delay: 0, options: .curveEaseInOut, animations: {[weak self] in
+            if let origin = self?.imageFeedOnClickOrigin{
+                self?.blackView.alpha = 0
+                self?.topNavBarHideView.alpha = 0
+                self?.imageFeedOnClick.frame = CGRect(origin: origin, size: (self?.imageFeedOnClick.frame.size)!)
+            }
+            
+        }) {[weak self] (status) in
+            self?.topNavBarHideView.removeFromSuperview()
+            self?.imageFeedOnClick.removeFromSuperview()
+            self?.blackView.removeFromSuperview()
+        }
     }
 }
 
 
 class FacebookFeedCell:UICollectionViewCell
 {
+    var fbFeedVC:FacebookFeedVC?
     
     var record:Record!{
         didSet{
@@ -127,7 +200,10 @@ class FacebookFeedCell:UICollectionViewCell
     fileprivate let imgFeed:UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
+        iv.isUserInteractionEnabled = true
         iv.layer.masksToBounds = true
+        
+        //Add tap gesture on the imageView
         return iv
     }()
     
@@ -174,6 +250,10 @@ class FacebookFeedCell:UICollectionViewCell
         stackView.spacing = 0
         stackView.distribution = .fillEqually
         addSubview(stackView)
+        
+        //Add tap gesture on imageFeed
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didClickOnFeedImage))
+        imgFeed.addGestureRecognizer(tapGesture)
     }
     
     fileprivate func setLayout()
@@ -198,6 +278,13 @@ class FacebookFeedCell:UICollectionViewCell
         button.setImage(image, for: .normal)
         return button
     }
+    
+    @objc fileprivate func didClickOnFeedImage()
+    {
+        let rectOfImgInCollectionView = self.convert(imgFeed.frame.origin, to: self.superview!.superview)
+        fbFeedVC?.presentImageWithAnimation(origin: rectOfImgInCollectionView, size:imgFeed.frame.size, image:imgFeed.image)
+    }
+    
 }
 
 extension UIView
